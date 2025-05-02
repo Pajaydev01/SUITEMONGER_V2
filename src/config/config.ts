@@ -1,0 +1,30 @@
+import dotenv from "dotenv";
+dotenv.config();
+export const config = {
+    ENVIRONMENT: process.env.ENVIRONMENT,
+    HOST: process.env.DB_HOST,
+    USERNAME: process.env.DB_USERNAME,
+    PASSWORD: process.env.DB_PASSWORD,
+    DATABASE: process.env.DB_DATABASE,
+    DB_DIALECT: process.env.DB_CONNECTION,
+    DB_PORT: process.env.DB_PORT,
+    PREMIUM_LOCAL_BASE: process.env.PREMIUM_LOCAL_BASE,
+    PREMIUM_ISSUER: process.env.PREMIUM_ISSUER,
+    PREMIUM_LOCAL_APIKEY: process.env.PREMIUM_LOCAL_APIKEY,
+    PREMIUM_LOCAL_SECRET: process.env.PREMIUM_LOCAL_SECRET,
+    BACKEND_URL: process.env.BACKEND_URL,
+    REDIS_HOST: process.env.REDIS_HOST,
+    REDIS_PORT: process.env.REDIS_PORT,
+    PREMIUM_LOCAL_TENANT: process.env.PREMIUM_LOCAL_TENANT,
+    PREMIUM_BANK_CODE: process.env.PREMIUM_BANK_CODE,
+    PAYROLL_PATH: process.env.PAYROLL_PATH,
+    EMAIL_HOST: process.env.EMAIL_HOST,
+    EMAIL_USER: process.env.EMAIL_USER,
+    EMAIL_PASS: process.env.EMAIL_PASS,
+    EMAIL_NAME: process.env.EMAIL_NAME,
+    EMAIL_PORT: process.env.EMAIL_PORT,
+    JWT_SECRET: process.env.JWT_SECRET,
+    JWT_DURATION: process.env.JWT_DURATION,
+    STARTIMES_CODE: process.env.STARTIMES_CODE,
+    STARTIMES_SERVICE_ID: process.env.STARTIMES_SERVICE_ID
+}
