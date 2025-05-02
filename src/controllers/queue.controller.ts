@@ -1,5 +1,6 @@
 import * as mailer from 'nodemailer';
 import Queue from "bull";
+import cacher from '../services/cache.service';
 class QueueController {
     constructor() { }
 
@@ -20,6 +21,30 @@ class QueueController {
         } catch (error) {
             console.error('Error processing email job:', error);
             done(error); // Call done with the error to indicate failure
+        }
+    }
+
+    public static async RemoveJob(job:Queue.Job, done:Queue.DoneCallback){
+        try {
+            const itemDel = job.data.items;
+            const deler = await cacher.deleteItem(itemDel.name);
+            if (deler) {
+                console.log('items removed from cache', itemDel.name)
+                await job.releaseLock();
+                job.remove()
+                done();
+                return;
+            }
+            else {
+                console.log('error removing item', deler);
+                await job.releaseLock();
+                job.remove()
+                done();
+                return;
+            }
+        } catch (error) {
+            console.error('Error processing email job:', error);
+            done(error);    
         }
     }
 }

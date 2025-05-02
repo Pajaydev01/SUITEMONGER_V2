@@ -22,7 +22,7 @@ app.get('/', (req, res) => {
 });
 
 
-app.use('/api/v2', router);
+app.use('/api/v1', router);
 
 //use the processes
 try {

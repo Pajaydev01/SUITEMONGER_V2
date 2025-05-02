@@ -16,14 +16,14 @@ class authservice {
             //trim away the bearer 
             const string = token.replace('Bearer ', '');
             const hash = string.replace(`${string.substring(0, string.indexOf('|'))}|`, '');
-
+            //console.log('hash', hash)
             //decode the hash and get the userid
             const item = await this.decodeToken(hash);
             /// console.log('item', item)
-            //const user = await users.findOne({ where: { id: item.id } });
-            //if (!user) return responseService.respond(res, {}, 401, false, 'Invalid user')
-            // console.log('user', user)
-            //this.user = user;
+            const user = await users.findOne({ where: { id: item.id } });
+            if (!user) return responseService.respond(res, {}, 401, false, 'Invalid user')
+            //console.log('user', user)
+            this.user = user;
             next();
         } catch (error) {
             responseService.respond(res, error.data ? error.data : error, error.code && typeof error.code == 'number' ? error.code : 500, false, error.message ? error.message : 'Server error');
@@ -45,11 +45,12 @@ class authservice {
     public generateUserToken = (user: users): Promise<string> => {
         return new Promise((resolve, reject) => {
             try {
+                const duration = config.JWT_DURATION
                 const item = {
                     id: user.dataValues.id
                 }
                 const token = jwt.sign(item, config.JWT_SECRET, {
-                    expiresIn: parseInt(config.JWT_DURATION)
+                    expiresIn: duration  // Token will expire in 1 hour
                 })
                 resolve(token);
             } catch (error) {

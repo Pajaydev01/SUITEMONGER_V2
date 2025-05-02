@@ -2,148 +2,106 @@ import { Request, Response } from "express";
 import responseService from "../services/response.service";
 import AuthService from "../services/Auth.service";
 import actionService from "../services/action.service";
+import users from "../database/models/users.model";
+import notificationService from "../services/notification.service";
+import otps from "../database/models/otps.model";
 
 class userController {
-    // public static revalidate = async (req: Request, res: Response) => {
-    //     try {
-    //         const body = actionService.getBody(req);
-    //         const user = await users.findOne({ where: { id: body.id } });
-    //         if (!user) return responseService.respond(res, {}, 412, false, 'Invalid user');
-    //         if (user.dataValues.hasWalletPin == 0) {
-    //             const otp = actionService.genOTP(4);
-    //             //save in otps
-    //             await otps.create({
-    //                 user_id: user.dataValues.id,
-    //                 otp,
-    //                 type: 'wallet_pin'
-    //             });
-    //             console.log('otp', otp)
-    //             //send an email
-    //             await notificationService.sendMail(user.dataValues.email, 'Pin setup', 'mail', { name: user.dataValues.name, body: `Dear user, kindly use ${otp} to set-up your wallet pin`, email: user.dataValues.email });
+    public static CreateUser=async (req:Request, res: Response)=>{
+        try {
+            const body= actionService.getBody(req);
+            const checker=await users.findOne({where:{email:body.email}});
+            if(checker) return responseService.respond(res,{},412,false,'User already exists');
+            //salt and hash the password
+            const password=await actionService.hasher(body.password);
+            body.password=password.hash;
+            body.salt=password.salt;
+            //create the user
+            const user=await users.create(body);
+            //get the user token
+            //const token=await AuthService.generateUserToken(user);
+            const otp=actionService.genOTP(4);
+            //save in otps  
+            await otps.create({
+                user_id:user.dataValues.id,
+                otp,
+                type:'SIGNUP'
+            });
+            //send email
+            await notificationService.sendMail(user.dataValues.email,'Welcome to SuiteMonger','mail',{name:user.dataValues.name,body:`Dear ${user.dataValues.name}, welcome to SuiteMonger. Your account has been created successfully, use ${otp} to verify your account`,email:user.dataValues.email});
+            delete user.dataValues.password;
+            delete user.dataValues.salt;
+            return responseService.respond(res,user,201,true,'User created');
+        } catch (error) {
+                        responseService.respond(res, error.data ? error.data : error, error.code && typeof error.code == 'number' ? error.code : 500, false, error.message ? error.message : 'Server error');
+        }
+    }
 
-    //         }
-    //         return responseService.respond(res, { hasWalletPin: user.dataValues.hasWalletPin == 0 ? false : true, hasTransactionPin: user.dataValues.hasTransactionPin == 0 ? false : true }, 200, true, 'Request processed');
-    //     } catch (error) {
-    //         console.log('error here', error)
-    //         //delete files here incase of errors
-    //         responseService.respond(res, error.data ? error.data : error, error.code && typeof error.code == 'number' ? error.code : 500, false, error.message ? error.message : 'Server error');
-    //     }
-    // }
-
-    // public static setWalletPin = async (req: Request, res: Response) => {
-    //     try {
-    //         const body = actionService.getBody(req);
-    //         const checker = await otps.findOne({ where: { otp: body.otp, user_id: body.user_id } });
-    //         if (!checker) return responseService.respond(res, {}, 412, false, 'Invalid otp');
-    //         //check expiration
-    //         const diff = actionService.getTimeDiff(checker.dataValues.updatedAt);
-    //         if (diff > 10) return responseService.respond(res, {}, 412, false, 'Token expired, please refresh to generate new otp');
-    //         const user = await users.findOne({ where: { id: body.user_id } });
-    //         await user.update({ hasWalletPin: 1 });
-    //         //save the pin to user pin
-    //         const check = await user_pins.findOne({ where: { user_id: user.dataValues.id } });
-    //         check !== null ? await check.update({ wallet_pin: body.pin }) : await user_pins.create({ user_id: body.user_id, wallet_pin: body.pin });
-    //         //get the user token
-    //         const token = await AuthService.generateUserToken(user)
-    //         return responseService.respond(res, user, 201, true, 'User wallet pin created', token);
-    //     } catch (error) {
-    //         console.log('error here', error)
-    //         //delete files here incase of errors
-    //         responseService.respond(res, error.data ? error.data : error, error.code && typeof error.code == 'number' ? error.code : 500, false, error.message ? error.message : 'Server error');
-    //     }
-    // }
-
-    // public static walletPinResetInitiate = async (req: Request, res: Response) => {
-    //     try {
-    //         const user = await AuthService.GetAuthUser();
-    //         const code = actionService.genOTP(4);
-    //         await otps.create({
-    //             type: 'wallet_pin',
-    //             otp: code,
-    //             user_id: user.dataValues.id
-    //         });
-    //         //send email
-    //         await notificationService.sendMail(user.dataValues.email, 'Wallet pin reset', 'mail', {
-    //             name: user.dataValues.name,
-    //             body: `Use ${code} as otp to change your wallet pin`
-    //         });
-    //         return responseService.respond(res, {}, 200, true, 'Otp sent')
-    //     } catch (error) {
-
-    //         console.log('error here', error)
-    //         //delete fil    es here incase of errors
-    //         responseService.respond(res, error.data ? error.data : error, error.code && typeof error.code == 'number' ? error.code : 500, false, error.message ? error.message : 'Server error');
-
-    //     }
-    // }
-
-    // public static WalletPinReset = async (req: Request, res: Response) => {
-    //     try {
-    //         const body = actionService.getBody(req);
-    //         const user = await AuthService.GetAuthUser()
-    //         //get the otp
-    //         const checker = await otps.findOne({ where: { otp: body.otp, user_id: user.dataValues.id } });
-    //         if (!checker) return responseService.respond(res, {}, 412, false, 'Invalid otp');
-    //         const diff = actionService.getTimeDiff(checker.dataValues.updatedAt);
-    //         if (diff > 10) return responseService.respond(res, {}, 412, false, 'Token expired, please refresh to generate new otp');
-    //         const check = await user_pins.findOne({ where: { user_id: user.dataValues.id } });
-    //         check !== null ? await check.update({ wallet_pin: body.pin }) : await user_pins.create({ user_id: body.user_id, wallet_pin: body.pin });
-    //         return responseService.respond(res, user, 201, true, 'User wallet pin changed');
-    //     } catch (error) {
-    //         console.log('error here', error)
-    //         //delete fil    es here incase of errors
-    //         responseService.respond(res, error.data ? error.data : error, error.code && typeof error.code == 'number' ? error.code : 500, false, error.message ? error.message : 'Server error');
-
-    //     }
-    // }
-    // public static pinLogin = async (req: Request, res: Response) => {
-    //     try {
-    //         const body = actionService.getBody(req);
-    //         const user = await users.findOne({ where: { id: body.user_id } });
-    //         if (!user) return responseService.respond(res, {}, 412, false, 'Invalid user');
-    //         const pin = await user_pins.findOne({ where: { user_id: body.user_id } });
-    //         if (!pin) return responseService.respond(res, {}, 412, false, 'Invalid user')
-    //         if (pin.dataValues.wallet_pin != body.pin) return responseService.respond(res, {}, 412, false, 'Invalid pin');
-    //         //get the user token
-    //         const token = await AuthService.generateUserToken(user)
-    //         return responseService.respond(res, user, 200, true, 'User logged in', token);
-    //     } catch (error) {
-    //         console.log('error here', error)
-    //         //delete fil    es here incase of errors
-    //         responseService.respond(res, error.data ? error.data : error, error.code && typeof error.code == 'number' ? error.code : 500, false, error.message ? error.message : 'Server error');
-    //     }
-    // }
-
-    // public static doTest = async (req: Request, res: Response) => {
-    //     try {
-    //         //create a sample premium company
-    //         // await pcompany.create({
-    //         //     company_id: '10',
-    //         //     premium_id: '664db49d0475aaaf9efaf548',
-    //         //     companyName: 'Hr56',
-    //         //     accountNumber: '0070004250'
-    //         // })
-    //         // ///
+    public static Login=async (req:Request, res: Response)=>{
+        try {
+            const body=actionService.getBody(req);
+            const user=await users.scope('withPassword').findOne({where:{email:body.email}});
+            if(!user) return responseService.respond(res,{},401,false,'Invalid email');
+            //check password
+            const check=await actionService.compare(user.dataValues.password,body.password,user.dataValues.salt);
+            if(!check) return responseService.respond(res,{},401,false,'Invalid email or password');
+            //get the user token
+            const token=await AuthService.generateUserToken(user);
+            delete user.dataValues.password;
+            delete user.dataValues.salt;
+            return responseService.respond(res,{user},200,true,'User logged in',token);
+        } catch (error) {
+                        responseService.respond(res, error.data ? error.data : error, error.code && typeof error.code == 'number' ? error.code : 500, false, error.message ? error.message : 'Server error');
+        }
+    }
 
 
-    //         // ///update sample user
-    //         // await users.update({ utility_bill: 'corporateKyc/TCgGqxNibr5HykLFlWBYNwOVdRfewJLQpsVBSBUL.png', introduction_letter: 'corporateKyc/TCgGqxNibr5HykLFlWBYNwOVdRfewJLQpsVBSBUL.png', signature: 'corporateKyc/TCgGqxNibr5HykLFlWBYNwOVdRfewJLQpsVBSBUL.png', government_id_card: 'corporateKyc/TCgGqxNibr5HykLFlWBYNwOVdRfewJLQpsVBSBUL.png', employee_id_card: 'corporateKyc/TCgGqxNibr5HykLFlWBYNwOVdRfewJLQpsVBSBUL.png' }, { where: { id: req.body.id } });
+    public static GetUser=async (req:Request, res: Response)=>{
+        try {
+            const user=await AuthService.GetAuthUser()
+            return responseService.respond(res,user,200,true,'User found');
+        } catch (error) {
+                        responseService.respond(res, error.data ? error.data : error, error.code && typeof error.code == 'number' ? error.code : 500, false, error.message ? error.message : 'Server error');
+        }
+    }
 
-    //         await users.update({ bvn: '22437561890' }, { where: { id: req.body.id } })
-    //         // await premiumWallet.create({
-    //         //     premium_id: '10133',
-    //         //     accountNumber: '0070005680',
-    //         //     accountName: 'Hr56',
-    //         //     user_id: req.body.id,
-    //         //     balance: 458560,
-    //         //     currency: 'NGN',
-    //         //     bankName: 'Premium Trust'
-    //         // })
-    //         return responseService.respond(res, {}, 200, true, 'deleted')
-    //     } catch (error) {
+    public static VerifyUser=async (req:Request, res: Response)=>{
+        try {
+            const body=actionService.getBody(req);
+            let user=await users.findOne({where:{email:body.email}});
+            const checker=await otps.findOne({where:{user_id:user.dataValues.id,otp:body.otp}});
+            if(!checker) return responseService.respond(res,{},401,false,'Invalid OTP or email');
+            //check time diff for expiry
+            const timeDiff=actionService.getTimeDiff(checker.dataValues.createdAt);
+            console.log('time diff',timeDiff);
+            if(timeDiff>10) return responseService.respond(res,{},401,false,'OTP expired');
+            await users.update({status:'ACTIVE'},{where:{id:user.dataValues.id}});
+            user=await users.findOne({where:{id:user.dataValues.id}});
+            await otps.destroy({where:{user_id:user.dataValues.id}});
+            return responseService.respond(res,user,200,true,'User verified');
+        } catch (error) {
+                        responseService.respond(res, error.data ? error.data : error, error.code && typeof error.code == 'number' ? error.code : 500, false, error.message ? error.message : 'Server error');
+        }
+    }
 
-    //     }
-    // }
+    public static ResendOTP=async (req:Request, res: Response)=>{
+        try {
+            const body=actionService.getBody(req);
+            let user=await users.findOne({where:{email:body.email}});
+            if(!user) return responseService.respond(res,{},401,false,'Invalid email');
+            const otp=actionService.genOTP(4);
+            await otps.create({
+                user_id:user.dataValues.id,
+                otp,
+                type:'SIGNUP'
+            });
+            //send email
+            await notificationService.sendMail(user.dataValues.email,'Welcome to SuiteMonger','mail',{name:user.dataValues.name,body:`Dear ${user.dataValues.name}, welcome to SuiteMonger. Your account has been created successfully, use ${otp} to verify your account`,email:user.dataValues.email});
+            return responseService.respond(res,user,200,true,'OTP resent');
+        } catch (error) {
+                        responseService.respond(res, error.data ? error.data : error, error.code && typeof error.code == 'number' ? error.code : 500, false, error.message ? error.message : 'Server error');
+        }
+    }
 }
 
 export default userController;

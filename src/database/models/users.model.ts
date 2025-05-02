@@ -27,10 +27,14 @@ const userModel = {
         type: DataTypes.STRING,
         allowNull: false
     },
+    salt:{
+        type: DataTypes.STRING,
+        allowNull: false
+    },
     status: {
         type: DataTypes.ENUM,
-        values: ['PENDING', 'ACTIVE', 'INACTIVE', 'BLOCKED'],
-        defaultValue: 'ACTIVE',
+        values: ['EMAIL_PENDING','PENDING', 'ACTIVE', 'INACTIVE', 'BLOCKED'],
+        defaultValue: 'EMAIL_PENDING',
         allowNull: false
     },
 }
@@ -41,11 +45,11 @@ users.init(
     paranoid: true,
     tableName,
     defaultScope: {
-        attributes: { exclude: ['password'] }
+        attributes: { exclude: ['password','salt'] }
     },
     scopes: {
         withPassword: {
-            attributes: { include: ['password'] }
+            attributes: { include: ['password','salt'] }
         }
     }
 })
@@ -56,8 +60,8 @@ users.init(
 
 ///modifications 
 const query = connect.getQueryInterface();
-// query.addColumn(tableName, 'third_name', userModel.third_name).catch(err => console.log('exists'))
-// query.changeColumn(tableName, 'first_name', userModel.first_name).catch(err => console.log('exists'))
+ query.addColumn(tableName, 'salt', userModel.salt).catch(err => console.log('exists'))
+ query.changeColumn(tableName, 'status', userModel.status).catch(err => console.log('exists'))
 
 
 

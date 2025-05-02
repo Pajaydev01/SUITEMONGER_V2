@@ -52,22 +52,7 @@ class queue {
             if (job_type) {
                 switch (job_type) {
                     case 'removeItem':
-                        const itemDel = job.data.items;
-                        const deler = await cacher.deleteItem(itemDel.name);
-                        if (deler) {
-                            console.log('items removed from cache', itemDel.name)
-                            await job.releaseLock();
-                            job.remove()
-                            done();
-                            return;
-                        }
-                        else {
-                            console.log('error removing item', deler);
-                            await job.releaseLock();
-                            job.remove()
-                            done();
-                            return;
-                        }
+                       await QueueController.RemoveJob(job,done);
                         break;
                     case 'email':
                         await QueueController.ProcessEmailJob(job, done)

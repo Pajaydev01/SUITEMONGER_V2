@@ -12,4 +12,4 @@ class migrate {
         await kyc.sync();
     }
 }
-new migrate()
+export default new migrate();
