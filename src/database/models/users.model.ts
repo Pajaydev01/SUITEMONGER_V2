@@ -1,6 +1,14 @@
 import { Sequelize, DataTypes, Model } from "sequelize";
 import connect from "../connection/connect";
+import kyc from "./kyc.model";
 // import bank_detail_data from "./bank_detail_data.models";
+export class userStatus{
+    public static USER_STATUS_EMAIL_PENDING= 'EMAIL_PENDING';
+    public static USER_STATUS_PENDING= 'PENDING';
+    public static USER_STATUS_ACTIVE= 'ACTIVE';
+    public static USER_STATUS_INACTIVE= 'INACTIVE';
+    public static USER_STATUS_BLOCKED= 'BLOCKED';
+}
 class users extends Model {
 }
 const tableName = 'users';
@@ -56,7 +64,7 @@ users.init(
 
 
 //relationships here
-
+users.hasOne(kyc,{sourceKey:'id',foreignKey:'user_id',as:'kyc'});
 
 ///modifications 
 const query = connect.getQueryInterface();

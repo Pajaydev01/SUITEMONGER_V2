@@ -8,7 +8,8 @@ import moment from 'moment';
 import { exec } from 'child_process';
 import axios, { AxiosError } from 'axios';
 import FormData from 'form-data';
-//import '@tensorflow/tfjs-node';
+import { Worker } from 'worker_threads'
+import * as faceapi from 'face-api.js';
 class action {
     public items: any = {
         connections: []
@@ -296,6 +297,30 @@ class action {
 
                 writer.on('error', reject)
 
+            } catch (error) {
+                reject(error)
+            }
+        })
+    }
+
+    public DetectFaceMesh= async (imagePath:string): Promise<faceapi.FaceDetection> => {
+        return new Promise(async (resolve, reject) => {
+            try {
+                ////this job is segregated to a worker thread to not slow anything down
+                const worker = new Worker(path.resolve(__dirname, './faceDetection.service.ts'), {
+                    workerData: { imagePath: `${imagePath}` }
+                  })
+              
+                  worker.on('message', (result) => {
+                    if (result?.error) return reject(new Error(result.error))
+                    const res:faceapi.FaceDetection= result
+                    resolve(result)
+                  })
+              
+                  worker.on('error', reject)
+                  worker.on('exit', (code) => {
+                    if (code !== 0) reject(new Error(`Worker stopped with exit code ${code}`))
+                  })
             } catch (error) {
                 reject(error)
             }

@@ -3,7 +3,7 @@ import { config } from "../config/config";
 import Queue from "bull";
 import cacher from "./cache.service";
 import QueueController from "../controllers/queue.controller";
-type jobType = 'save' | 'payroll' | 'removeItem' | 'retryFailed' | 'email';
+type jobType = 'save' | 'payroll' | 'removeItem' | 'retryFailed' | 'email' | 'facedetection';
 class queue {
     private queueJob = (): Promise<Queue.Queue<any>> => {
         return new Promise((resolve, reject) => {
@@ -56,6 +56,9 @@ class queue {
                         break;
                     case 'email':
                         await QueueController.ProcessEmailJob(job, done)
+                        break
+                    case 'facedetection':
+                        await QueueController.DetectFaceJob(job, done)
                         break
                     default:
                         break;

@@ -11,6 +11,7 @@ import { router } from './router/router';
 import { Server, createServer } from 'node:https';
 import * as fs from 'fs';
 import path from 'node:path';
+import websocketService from './services/websocket.service';
 app.use(cors({
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
@@ -43,6 +44,7 @@ try {
         })
     } else {
         const apper = http.createServer(app);
+        websocketService.connect(apper);
         apper.listen(5000, () => {
             return console.log(`Express is listening at http://localhost:${5000}`);
         });

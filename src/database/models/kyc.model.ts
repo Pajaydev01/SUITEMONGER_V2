@@ -1,7 +1,13 @@
 import { Sequelize, DataTypes, Model } from "sequelize";
 import connect from "../connection/connect";
+export class kycStatus{
+    public static KYC_STATUS_PENDING= 'PENDING';
+    public static KYC_STATUS_VERIFIED= 'VERIFIED';
+    public static KYC_STATUS_REJECTED= 'REJECTED';
+}
 // import bank_detail_data from "./bank_detail_data.models";
 class kyc extends Model {
+
 }
 const tableName = 'kyc';
 const userModel = {

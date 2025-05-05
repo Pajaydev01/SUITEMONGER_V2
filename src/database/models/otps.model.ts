@@ -1,6 +1,10 @@
 import { Sequelize, DataTypes, Model } from "sequelize";
 import connect from "../connection/connect";
 // import bank_detail_data from "./bank_detail_data.models";
+export class otpsType{
+    public static OTP_TYPE_SIGNUP= 'SIGNUP';
+    public static OTP_TYPE_FORGOT_PASS= 'FORGOT_PASS';
+}
 class otps extends Model {
 }
 const tableName = 'otps';
