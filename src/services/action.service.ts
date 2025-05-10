@@ -303,25 +303,31 @@ class action {
         })
     }
 
-    public DetectFaceMesh= async (imagePath:string): Promise<faceapi.FaceDetection> => {
+    public DetectFaceMesh = async (imagePath: string): Promise<faceapi.FaceDetection> => {
         return new Promise(async (resolve, reject) => {
             try {
                 ////this job is segregated to a worker thread to not slow anything down
                 const worker = new Worker(path.resolve(__dirname, './faceDetection.service.ts'), {
                     workerData: { imagePath: `${imagePath}` }
-                  })
-              
-                  worker.on('message', (result) => {
+                })
+
+                worker.on('message', (result) => {
+                    console.log('Worker done', result)
                     if (result?.error) return reject(new Error(result.error))
-                    const res:faceapi.FaceDetection= result
+                    const res: faceapi.FaceDetection = result
                     resolve(result)
-                  })
-              
-                  worker.on('error', reject)
-                  worker.on('exit', (code) => {
+                })
+
+                worker.on('error', (reason) => {
+                    console.log('worker error', reason)
+                    reject(reason)
+                })
+                worker.on('exit', (code) => {
+                    console.log('Worjer exited with code', code)
                     if (code !== 0) reject(new Error(`Worker stopped with exit code ${code}`))
-                  })
+                })
             } catch (error) {
+                console.log('error final', error)
                 reject(error)
             }
         })

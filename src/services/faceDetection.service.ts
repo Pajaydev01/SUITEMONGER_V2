@@ -10,21 +10,36 @@ async function detectFace(imagePath: string) {
             const { Canvas, Image, ImageData }: any = canvas
             console.log('image path', imagePath)
             faceapi.env.monkeyPatch({ Canvas, Image, ImageData });
-            const img:any= new canvas.Image();
-            img.src = `public/${imagePath}`;
-               await faceapi.nets.faceLandmark68Net.loadFromDisk('./public/models');
-               await faceapi.nets.ssdMobilenetv1.loadFromDisk('./public/models');
-               const detect = await faceapi.detectSingleFace(img);
-               console.log('done',detect)
-               resolve(detect)
+            const img = new canvas.Image();
+            setTimeout(() => {
+                process()
+            }, 500)
+
+            const process = async () => {
+                console.log('done loading image')
+                img.src = `public/${imagePath}`;
+                await faceapi.nets.faceLandmark68Net.loadFromDisk('./public/models');
+                await faceapi.nets.ssdMobilenetv1.loadFromDisk('./public/models');
+                const imgs: any = img
+                const detect = await faceapi.detectSingleFace(imgs);
+                console.log('done', detect)
+                resolve(detect)
+            }
+
         }
         catch (err) {
-            console.log(err)
+            console.log("error here in worker", err)
             reject(err)
         }
     })
 }
 
 detectFace(workerData.imagePath)
-  .then((result) => parentPort?.postMessage(result))
-  .catch((err) => parentPort?.postMessage({ error: err.message }))
+    .then((result) => {
+        console.log('done in detectface here with success')
+        parentPort?.postMessage(result)
+    })
+    .catch((err) => {
+        console.log('done in detectface here with error')
+        parentPort?.postMessage({ error: err.message })
+    })
