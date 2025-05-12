@@ -9,6 +9,14 @@ export class userStatus{
     public static USER_STATUS_INACTIVE= 'INACTIVE';
     public static USER_STATUS_BLOCKED= 'BLOCKED';
 }
+
+export class userType{
+    public static USER_TYPE_USER = 'USER';
+    public static USER_TYPE_ADMIN = 'ADMIN';
+    public static USER_TYPE_VISITOR = 'VISITOR';
+    public static USER_TYPE_EMPLOYEE = 'EMPLOYEE';
+    public static USER_TYPE_LISTER= 'LISTER';
+}
 class users extends Model {
 }
 const tableName = 'users';
@@ -45,6 +53,12 @@ const userModel = {
         defaultValue: 'EMAIL_PENDING',
         allowNull: false
     },
+    role:{
+        type: DataTypes.ENUM,
+        values: ['USER','ADMIN', 'VISITOR', 'EMPLOYEE','LISTER'],
+        defaultValue: 'USER',
+        allowNull: false
+    }
 }
 users.init(
     userModel, {
@@ -69,6 +83,8 @@ users.hasOne(kyc,{sourceKey:'id',foreignKey:'user_id',as:'kyc'});
 ///modifications 
 const query = connect.getQueryInterface();
  query.addColumn(tableName, 'salt', userModel.salt).catch(err => console.log('exists'))
+ query.addColumn(tableName, 'role', userModel.role).catch(err => console.log('exists'))
+ query.changeColumn(tableName, 'role', userModel.role).catch(err => console.log('exists'))
  query.changeColumn(tableName, 'status', userModel.status).catch(err => console.log('exists'))
 
 

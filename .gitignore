@@ -41,6 +41,8 @@ Thumbs.db
 
 .env
 /dist
-/pubic/face_photo
-/pubic/images
-/public/p_o_a
+/public/face_photo/
+/public/images/
+/public/p_o_a/
+/public/house_images/
+/public/house_videos/

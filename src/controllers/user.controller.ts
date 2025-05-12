@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import responseService from "../services/response.service";
 import AuthService from "../services/Auth.service";
 import actionService from "../services/action.service";
-import users, { userStatus } from "../database/models/users.model";
+import users, { userStatus, userType } from "../database/models/users.model";
 import notificationService from "../services/notification.service";
 import otps, { otpsType } from "../database/models/otps.model";
 import kyc from "../database/models/kyc.model";
@@ -78,7 +78,7 @@ class userController {
             const timeDiff = actionService.getTimeDiff(checker.dataValues.createdAt);
             console.log('time diff', timeDiff);
             if (timeDiff > 10) return responseService.respond(res, {}, 401, false, 'OTP expired');
-            await users.update({ status: userStatus.USER_STATUS_PENDING }, { where: { id: user.dataValues.id } });
+            user.dataValues.role==userType.USER_TYPE_ADMIN?await users.update({ status: userStatus.USER_STATUS_ACTIVE }, { where: { id: user.dataValues.id } }): await users.update({ status: userStatus.USER_STATUS_PENDING }, { where: { id: user.dataValues.id } });
             user = await users.findOne({ where: { id: user.dataValues.id } });
             await otps.destroy({ where: { user_id: user.dataValues.id } });
             return responseService.respond(res, user, 200, true, 'User verified');
@@ -143,6 +143,15 @@ class userController {
             await users.update({ password: body.password, salt: body.salt }, { where: { id: user.dataValues.id } });
             await otps.destroy({ where: { user_id: user.dataValues.id, type: 'FORGOT_PASS' } });
             return responseService.respond(res, {}, 200, true, 'Password reset');
+        } catch (error) {
+            responseService.respond(res, error.data ? error.data : error, error.code && typeof error.code == 'number' ? error.code : 500, false, error.message ? error.message : 'Server error');
+        }
+    }
+
+    public static GetUserRoles = async (req: Request, res: Response) => {
+        try {
+            const roles=[userType.USER_TYPE_ADMIN,userType.USER_TYPE_EMPLOYEE,userType.USER_TYPE_USER,userType.USER_TYPE_VISITOR,userType.USER_TYPE_LISTER]
+            return responseService.respond(res, roles, 200, true, 'User roles retrieved');
         } catch (error) {
             responseService.respond(res, error.data ? error.data : error, error.code && typeof error.code == 'number' ? error.code : 500, false, error.message ? error.message : 'Server error');
         }

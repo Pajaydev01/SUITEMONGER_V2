@@ -10,6 +10,7 @@ import axios, { AxiosError } from 'axios';
 import FormData from 'form-data';
 import { Worker } from 'worker_threads'
 import * as faceapi from 'face-api.js';
+import multer from 'multer';
 class action {
     public items: any = {
         connections: []
@@ -93,7 +94,7 @@ class action {
         })
     }
 
-    public async uploadFile(paths: string, user: string, file: string, reduce: boolean = false): Promise<{
+    public async uploadFile(paths: string, user: string, file: string, sizeOnly: boolean = false): Promise<{
         path: string,
         size: number
     }> {
@@ -102,32 +103,30 @@ class action {
                 let fail = false;
                 let matches = dataString.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/),
                     response: any = {};
-                if (matches == null) matches = dataString.match(/data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+).*,.*/), fail = true;
-
-
-                // if (matches.length !== 3) {
-                //     reject(new Error('Invalid input string'))
-                // }
-
-                // response.type = matches[1];
-                // response.data = new Buffer(matches[2], 'base64');
-
-                // resolve(response);
-                // const matches2 = dataString.match(/data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+).*,.*/),
-                //     response2: any = {};
-                // console.log('match: ',dataString.replace(/^data:([A-Za-z-+/]+);base64,/, ''))
-                // if (!matches.length) {
-                //     reject(new Error('Invalid input string'))
-                // }
-
+                //console.log('matches',matches)
+                if (matches == null){
+                    matches = dataString.match(/data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+).*,.*/)
+                    fail = true;
+                    //console.log('failed match update',matches)
+                }
                 response.type = matches[1];
-                response.data = !fail ? new Buffer(matches[2], 'base64') : Buffer.from(dataString.replace(/data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,/, ''), 'base64');
+                response.data = !fail ? Buffer.from(matches[2], 'base64') : new Buffer(dataString.replace(/data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,/, ''), 'base64');
+                //console.log('trimmed res',dataString.replace(/data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,/, ''))
                 resolve(response);
             })
         }
+
         return new Promise(async (resolve, reject) => {
             try {
                 let decodedImg = await decodeBase64(file);
+                //console.log('decoded',decodedImg)
+                if(sizeOnly){
+                    resolve({
+                        path:'',
+                        size:decodedImg.data.length/ (1024 * 1024)
+                    })
+                    return;
+                }
                 //console.log('buffer', decodedImg.data)
                 let imageBuffer = decodedImg.data;
                 let type = decodedImg.type;
@@ -146,7 +145,7 @@ class action {
                 const write = fs.writeFileSync('public/' + paths + "/" + fileName, imageBuffer, 'utf8');
                 resolve({
                     path: fileName,
-                    size: Number((decodedImg.data.length / 1e+6).toFixed(2))
+                    size: Number((decodedImg.data.length / 1e+6).toFixed(2)) // This is in megabytes (MB)
                 });
             }
             catch (err) {
@@ -162,12 +161,12 @@ class action {
         })
     }
 
-    public loop = async (file: Array<string>, user: string, path: string, url: string): Promise<Array<string>> => {
+    public UploadMultipleImage = async (file: Array<string>, user: string, path: string): Promise<Array<string>> => {
         return new Promise((resolve, reject) => {
             const data = [];
             file.forEach(async (res, index) => {
                 const process = await this.uploadFile(path, user, res);
-                const image = url + '/' + path + process;
+                const image = `${path}/${process.path}`
                 data.push(image);
             });
             resolve(data);
@@ -331,6 +330,35 @@ class action {
                 reject(error)
             }
         })
+    }
+
+
+    public formDataToObject=(formData: any)=> {
+        const safeBody = JSON.parse(JSON.stringify(formData));
+        return safeBody;
+      }
+
+      //////listing
+    public initMulterMiddleware=():multer.Multer=>{
+        const upload = multer({
+            storage: multer.diskStorage({
+                destination: (req, file, cb) => {
+                    console.log('files', file.fieldname)
+                    if (file.fieldname.includes('short_video')) {
+                        if (file.size > parseInt(config.VIDEO_SIZE) * 1024 * 1024) { // 10 MB size limit
+                             cb(new Error('File size exceeds the limit of 10MB'),null);
+                        }
+                        return cb(null, 'public/house_videos');
+                    } else if (file.fieldname.includes('pictures')) {
+                        cb(null, 'public/house_images');
+                    }
+                },
+                filename: (req, file, cb) => {
+                    cb(null, `${Date.now()}-${file.originalname}`);
+                }
+            })
+        });
+        return upload
     }
 }
 

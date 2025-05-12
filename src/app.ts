@@ -29,31 +29,31 @@ app.use('/api/v1', router);
 try {
     const apper = http.createServer(app);
     websocketService.connect(apper);
-    apper.listen(5000, () => {
-        return console.log(`Express is listening at http://localhost:${5000}`);
-    });
-    // if (cluster.isPrimary) {
-    //     const cpus = os.cpus().length;
-    //     console.log('No of process to start: ', cpus);
-    //     for (let index = 0; index < cpus; index++) {
-    //         cluster.fork();
-    //     }
-    //     cluster.on('exit', (worker, code, signal) => {
-    //         console.log(`this worker died with process id: ${worker}, code : ${code} and signal: ${signal}`);
+    // apper.listen(5000, () => {
+    //     return console.log(`Express is listening at http://localhost:${5000}`);
+    // });
+    if (cluster.isPrimary) {
+        const cpus = os.cpus().length;
+        console.log('No of process to start: ', cpus);
+        for (let index = 0; index < cpus; index++) {
+            cluster.fork();
+        }
+        cluster.on('exit', (worker, code, signal) => {
+            console.log(`this worker died with process id: ${worker}, code : ${code} and signal: ${signal}`);
 
-    //         //restart service
-    //         console.log('restarting service');
-    //         setTimeout(() => {
-    //             cluster.fork();
-    //         }, 5000)
-    //     })
-    // } else {
-    //     const apper = http.createServer(app);
-    //     websocketService.connect(apper);
-    //     apper.listen(5000, () => {
-    //         return console.log(`Express is listening at http://localhost:${5000}`);
-    //     });
-    // }
+            //restart service
+            console.log('restarting service');
+            setTimeout(() => {
+                cluster.fork();
+            }, 5000)
+        })
+    } else {
+        const apper = http.createServer(app);
+        websocketService.connect(apper);
+        apper.listen(5000, () => {
+            return console.log(`Express is listening at http://localhost:${5000}`);
+        });
+    }
 } catch (error) {
     console.log('error here', error)
 }

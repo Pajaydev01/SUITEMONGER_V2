@@ -17,5 +17,6 @@ export const config = {
     EMAIL_NAME: process.env.EMAIL_NAME,
     EMAIL_PORT: process.env.EMAIL_PORT,
     JWT_SECRET: process.env.JWT_SECRET,
-    JWT_DURATION: process.env.JWT_DURATION
+    JWT_DURATION: process.env.JWT_DURATION,
+    VIDEO_SIZE:process.env.VIDEO_SIZE
 }

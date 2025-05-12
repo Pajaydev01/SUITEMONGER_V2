@@ -2,7 +2,7 @@ import * as mailer from 'nodemailer';
 import Queue from "bull";
 import cacher from '../services/cache.service';
 import actionService from '../services/action.service';
-import kyc from '../database/models/kyc.model';
+import kyc, { kycStatus } from '../database/models/kyc.model';
 import users, { userStatus } from '../database/models/users.model';
 import notificationService from '../services/notification.service';
 import socketIo from '../services/websocket.service';
@@ -73,7 +73,7 @@ class QueueController {
                     const user = await users.findOne({ where: { id: kc.dataValues.user_id } });
                     await kc.update({
                         facial_photo_status: 'NO FACE DETECTED',
-                        status: 'REJECTED',
+                        status: kycStatus.KYC_STATUS_REJECTED,
                         reason: 'NO FACE DETECTED'
                     });
                     //send email to the user
@@ -87,7 +87,7 @@ class QueueController {
                     //update the kyc status to verified
                     await kc.update({
                         facial_photo_status: 'FACE DETECTED',
-                        status: 'VERIFIED',
+                        status: kycStatus.KYC_STATUS_PENDING,
                         reason: 'FACE DETECTED'
                     });
                     //update the user status to active
@@ -105,7 +105,7 @@ class QueueController {
                 const user = await users.findOne({ where: { id: kc.dataValues.user_id } });
                 await kc.update({
                     facial_photo_status: 'NO FACE DETECTED',
-                    status: 'REJECTED',
+                    status: kycStatus.KYC_STATUS_REJECTED,
                     reason: 'NO FACE DETECTED'
                 });
                 //send email to the user
