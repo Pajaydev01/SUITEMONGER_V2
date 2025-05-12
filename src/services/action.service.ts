@@ -104,7 +104,7 @@ class action {
                 let matches = dataString.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/),
                     response: any = {};
                 //console.log('matches',matches)
-                if (matches == null){
+                if (matches == null) {
                     matches = dataString.match(/data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+).*,.*/)
                     fail = true;
                     //console.log('failed match update',matches)
@@ -120,10 +120,10 @@ class action {
             try {
                 let decodedImg = await decodeBase64(file);
                 //console.log('decoded',decodedImg)
-                if(sizeOnly){
+                if (sizeOnly) {
                     resolve({
-                        path:'',
-                        size:decodedImg.data.length/ (1024 * 1024)
+                        path: '',
+                        size: decodedImg.data.length / (1024 * 1024)
                     })
                     return;
                 }
@@ -333,23 +333,31 @@ class action {
     }
 
 
-    public formDataToObject=(formData: any)=> {
+    public formDataToObject = (formData: any) => {
         const safeBody = JSON.parse(JSON.stringify(formData));
         return safeBody;
-      }
+    }
 
-      //////listing
-    public initMulterMiddleware=():multer.Multer=>{
+    //////listing
+    public initMulterMiddleware = (): multer.Multer => {
         const upload = multer({
             storage: multer.diskStorage({
                 destination: (req, file, cb) => {
                     console.log('files', file.fieldname)
                     if (file.fieldname.includes('short_video')) {
                         if (file.size > parseInt(config.VIDEO_SIZE) * 1024 * 1024) { // 10 MB size limit
-                             cb(new Error('File size exceeds the limit of 10MB'),null);
+                            cb(new Error('File size exceeds the limit of 10MB'), null);
+                        }
+                        const folderPath = path.join(__dirname, '../../public/house_videos');
+                        if (!fs.existsSync(folderPath)) {
+                            fs.mkdirSync(folderPath, { recursive: true });
                         }
                         return cb(null, 'public/house_videos');
                     } else if (file.fieldname.includes('pictures')) {
+                        const folderPath = path.join(__dirname, '../../public/house_images');
+                        if (!fs.existsSync(folderPath)) {
+                            fs.mkdirSync(folderPath, { recursive: true });
+                        }
                         cb(null, 'public/house_images');
                     }
                 },

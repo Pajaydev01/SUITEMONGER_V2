@@ -2,7 +2,7 @@ import { Socket, Server } from "socket.io";
 import actionService from "./action.service";
 import Websocket from "../controllers/websocket.controller";
 import users from "../database/models/users.model";
-export  type types='message' | 'face_detection' | 'typing' | 'blur'
+export type types = 'message' | 'face_detection' | 'typing' | 'blur'
 class socketIo {
     public static con: Array<{ user: users, con: Socket }> = [];
     public static src: Server;
@@ -28,7 +28,7 @@ class socketIo {
             let list = this.con;
             //validate the user
             // const userid= res.handshake.auth.userId;
-            const userid= res.handshake.headers['userid'];
+            const userid = res.handshake.headers['userid'];
             console.log('User id: ', userid)
             if (!userid) {
                 console.log('No user id passed')
@@ -36,8 +36,8 @@ class socketIo {
                 res.disconnect();
                 return;
             }
-            const check=await users.findOne({where:{id:userid}})
-            if(!check){
+            const check = await users.findOne({ where: { id: userid } })
+            if (!check) {
                 console.log('User not found')
                 res.emit('error', { message: 'User not found' });
                 res.disconnect();
@@ -45,7 +45,7 @@ class socketIo {
             }
             console.log('User found and socket connected')
             const things = {
-                user:check,
+                user: check,
                 con: res
             };
             if (this.con.length > 0) {
@@ -57,15 +57,15 @@ class socketIo {
             res.on('message', async (res) => {
                 switch (res.type) {
                     case 'message':
-                       await Websocket.IncomingMessage(connect,res,things.user)
+                        await Websocket.IncomingMessage(connect, res, things.user)
                         break;
 
                     case 'typing':
-                        await Websocket.Typing(connect,res)
+                        await Websocket.Typing(connect, res)
                         break;
 
                     case 'blur':
-                        await Websocket.Blur(connect,res)
+                        await Websocket.Blur(connect, res)
                         break;
                 }
 
@@ -80,7 +80,7 @@ class socketIo {
     }
 
 
-    public static SendMessage = async (message: any, user:users=null,type:types) => {
+    public static SendMessage = async (message: any, user: users = null, type: types) => {
         //  message="hollo everyone";
         if (this.con.length > 0) {
             //loop and send to all if no user is passed
@@ -88,11 +88,11 @@ class socketIo {
                 const check = this.con.filter(resp => resp.user.dataValues.id == user.dataValues.id);
                 if (check.length > 0) {
                     // check[0].con.emit('newMessage', JSON.stringify(message));
-                    await Websocket.OutgoingMessage(check[0].con,message,type,check[0].user)
+                    await Websocket.OutgoingMessage(check[0].con, message, type, check[0].user)
                 }
             } else {
-                this.con.forEach((res,index:number) => {
-                    Websocket.OutgoingMessage(res[index].con,message,type,res[index].user)
+                this.con.forEach((res, index: number) => {
+                    Websocket.OutgoingMessage(this.con[index].con, message, type, this.con[index].user)
                 })
             }
             // console.log('total users: ', this.con.length);
