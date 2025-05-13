@@ -5,6 +5,7 @@ import * as jwt from 'jsonwebtoken';
 import { config } from "../config/config";
 import { resolve } from "path";
 import kyc from "../database/models/kyc.model";
+import organization from "../database/models/organization.model";
 class authservice {
     private user: users = null;
     //authorization for sanctum key
@@ -21,7 +22,7 @@ class authservice {
             //decode the hash and get the userid
             const item = await this.decodeToken(hash);
             /// console.log('item', item)
-            const user = await users.findOne({ where: { id: item.id},include: [{ model: kyc, as: 'kyc' }]  });
+            const user = await users.findOne({ where: { id: item.id},include: [{ model: kyc, as: 'kyc' },{model:organization,as:'organization'}]  });
             if (!user) return responseService.respond(res, {}, 401, false, 'Invalid user')
             //console.log('user', user)
             this.user = user;
@@ -45,7 +46,7 @@ class authservice {
             //decode the hash and get the userid
             const item = await this.decodeToken(hash);
             /// console.log('item', item)
-            const user = await users.findOne({ where: { id: item.id, role:userType.USER_TYPE_USER},include: [{ model: kyc, as: 'kyc' }]  });
+            const user = await users.findOne({ where: { id: item.id, role:userType.USER_TYPE_USER},include: [{ model: kyc, as: 'kyc' },{model:organization,as:'organization'}]  });
             if (!user) return responseService.respond(res, {}, 401, false, 'Invalid user or access restricted due to role')
             //console.log('user', user)
             this.user = user;
@@ -68,7 +69,7 @@ class authservice {
             //decode the hash and get the userid
             const item = await this.decodeToken(hash);
             /// console.log('item', item)
-            const user = await users.findOne({ where: { id: item.id,role:userType.USER_TYPE_ADMIN },include: [{ model: kyc, as: 'kyc' }]  });
+            const user = await users.findOne({ where: { id: item.id,role:userType.USER_TYPE_ADMIN },include: [{ model: kyc, as: 'kyc' },{model:organization,as:'organization'}]  });
             if (!user) return responseService.respond(res, {}, 401, false, 'Invalid user or invalid authorization level')
             //console.log('user', user)
             this.user = user;
@@ -92,7 +93,7 @@ class authservice {
             //decode the hash and get the userid
             const item = await this.decodeToken(hash);
             /// console.log('item', item)
-            const user = await users.findOne({ where: { id: item.id,role:userType.USER_TYPE_LISTER },include: [{ model: kyc, as: 'kyc' }]  });
+            const user = await users.findOne({ where: { id: item.id,role:userType.USER_TYPE_LISTER },include: [{ model: kyc, as: 'kyc' },{model:organization,as:'organization'}]  });
             if (!user) return responseService.respond(res, {}, 401, false, 'Invalid user or invalid authorization level')
             //console.log('user', user)
             this.user = user;
@@ -127,7 +128,10 @@ class authservice {
                 })
                 resolve(token);
             } catch (error) {
-                reject(error)
+                reject({
+                    message:'Error occured validating user',
+                    code:401
+                })
             }
         })
     }
@@ -138,7 +142,10 @@ class authservice {
                 const decode = jwt.verify(token, config.JWT_SECRET);
                 resolve(decode)
             } catch (error) {
-                reject(error)
+                reject({
+                    message:'Invalid or expired authorization token',
+                    code:401
+                })
             }
         })
     }

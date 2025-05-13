@@ -1,6 +1,8 @@
 import { Sequelize, DataTypes, Model, ModelAttributeColumnOptions } from "sequelize";
 import connect from "../connection/connect";
 import subHouse from "./sub_house.model";
+import users from "./users.model";
+import organization from "./organization.model";
 class house extends Model {
 }
 const tableName = 'house';
@@ -15,6 +17,16 @@ const userModel = {
         allowNull: false,
         references: {
             model: 'users',
+            key: 'id'
+        },
+        onDelete: 'CASCADE',
+        onUpdate: 'CASCADE'
+    },
+    organization_id: {
+        type: DataTypes.INTEGER.UNSIGNED,
+        allowNull: true,
+        references: {
+            model: 'organization',
             key: 'id'
         },
         onDelete: 'CASCADE',
@@ -35,6 +47,7 @@ const userModel = {
     name:{
         type:DataTypes.STRING,
         allowNull:false,
+        unique:true
     },
     details:{
         type:DataTypes.STRING,
@@ -79,11 +92,14 @@ house.init(
 })
 //relationships here
 house.hasOne(subHouse,{sourceKey:'id',foreignKey:'house_id',as:'sub_house'});
+house.hasOne(users,{sourceKey:'user_id',foreignKey:'id',as:'creator'});
+house.hasOne(organization,{sourceKey:'organization_id',foreignKey:'id',as:'organization'});
+
 
 ///modifications 
 const query = connect.getQueryInterface();
-// query.addColumn(tableName, 'third_name', userModel.third_name).catch(err => console.log('exists'))
-// query.changeColumn(tableName, 'first_name', userModel.first_name).catch(err => console.log('exists'))
+query.addColumn(tableName, 'organization_id', userModel.organization_id).catch(err => console.log('exists'))
+query.changeColumn(tableName, 'name', userModel.name).catch(err => console.log('exists'))
 
 
 

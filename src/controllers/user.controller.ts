@@ -29,7 +29,7 @@ class userController {
                 type: otpsType.OTP_TYPE_SIGNUP
             });
             //send email
-            await notificationService.sendMail(user.dataValues.email, 'Welcome to SuiteMonger', 'mail', { name: user.dataValues.first_name, body: `Dear ${user.dataValues.name}, welcome to SuiteMonger. Your account has been created successfully, use ${otp} to verify your account`, email: user.dataValues.email });
+            await notificationService.sendMail(user.dataValues.email, 'Welcome to SuiteMonger', 'mail', { name: user.dataValues.first_name, body: `Dear ${user.dataValues.first_name}, welcome to SuiteMonger. Your account has been created successfully, use ${otp} to verify your account`, email: user.dataValues.email });
             delete user.dataValues.password;
             delete user.dataValues.salt;
             return responseService.respond(res, user, 201, true, 'User created');
@@ -60,7 +60,6 @@ class userController {
     public static GetUser = async (req: Request, res: Response) => {
         try {
             let user = await AuthService.GetAuthUser();
-            user = await users.findOne({ where: { id: user.dataValues.id }, include: [{ model: kyc, as: 'kyc' }] });
             return responseService.respond(res, user, 200, true, 'User found');
         } catch (error) {
             responseService.respond(res, error.data ? error.data : error, error.code && typeof error.code == 'number' ? error.code : 500, false, error.message ? error.message : 'Server error');
