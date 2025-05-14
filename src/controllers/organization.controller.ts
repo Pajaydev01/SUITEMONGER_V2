@@ -66,11 +66,8 @@ export default class Organization{
             const org_user=await organization_users.findOne({where:{organization_id:us.dataValues.organization.dataValues.id,role:organizationUserRoles.ADMIN}});
         if(!org_user) return responseService.respond(res,{},412,false,'User cannot create users')
             const body=await actionService.getBody(req);
-            
-            const checker = await users.findOne({ where: { email: body.email } });
-            if (checker) return responseService.respond(res, {}, 412, false, 'User already exists');
             //salt and hash the password
-            const pass=actionService.genToken(5)
+            const pass=actionService.genToken(8)
             const password = await actionService.hasher(pass);
             body.password = password.hash;
             body.salt = password.salt;

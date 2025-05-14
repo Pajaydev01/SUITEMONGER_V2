@@ -12,7 +12,7 @@ export default class Kyccontroller {
             const body=actionService.getBody(req);
             const user=await AuthService.GetAuthUser();
             if(user.dataValues.status!=userStatus.USER_STATUS_PENDING) return responseService.respond(res,{},412,false,'User not active');
-            const kc=await kyc.findOne({where:{user_id:user.dataValues.id}});
+            const kc=user.dataValues.kyc;
             if(kc) return responseService.respond(res,{},412,false,'KYC already submitted');
             //upload proof of address and validate facial photo uplodaded
             const proof_of_address=await actionService.uploadFile('p_o_a',user.dataValues.id,body.proof_of_address);
@@ -37,8 +37,9 @@ export default class Kyccontroller {
         try {
             const body=actionService.getBody(req);
             const user=await AuthService.GetAuthUser();
-            const kc=await kyc.findOne({where:{user_id:user.dataValues.id,status:kycStatus.KYC_STATUS_REJECTED}});
-            if(!kc) return responseService.respond(res,{},412,false,'KYC not previously submitted or under review');
+            const kc=user.dataValues.kyc;
+            if(!kc) return responseService.respond(res,{},412,false,'KYC not previously submitted');
+            if(kc.dataValues.status!=kycStatus.KYC_STATUS_REJECTED) return responseService.respond(res,{},412,false,'Kyc can not be updated for this user');
             //upload proof of address and validate facial photo uplodaded
             if(body.proof_of_address){
                 const proof_of_address=await actionService.uploadFile('p_o_a',user.dataValues.id,body.proof_of_address);
@@ -64,7 +65,7 @@ export default class Kyccontroller {
     public static GetKyc=async (req:Request, res: Response)=>{
         try {
             const user=await AuthService.GetAuthUser();
-            const kc=await kyc.findOne({where:{user_id:user.dataValues.id}});
+            const kc=user.dataValues.kyc;
             if(!kc) return responseService.respond(res,{},412,false,'KYC not previously submitted');
             return responseService.respond(res,kc,200,true,'KYC retrieved');
         } catch (error) {

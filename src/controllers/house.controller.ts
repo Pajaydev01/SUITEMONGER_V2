@@ -3,9 +3,7 @@ import responseService from "../services/response.service";
 import actionService from "../services/action.service";
 import AuthService from "../services/Auth.service";
 import { kycStatus } from "../database/models/kyc.model";
-import { config } from "../config/config";
 import house from "../database/models/house.model";
-import kyc from '../database/models/kyc.model';
 import subHouse from "../database/models/sub_house.model";
 import socketIo from "../services/websocket.service";
 import organization, { organizationtatus } from "../database/models/organization.model";
@@ -30,6 +28,8 @@ export default class HouseController {
                 const org_user=await organization_users.findOne({where:{organization_id:org.dataValues.id}})
             if(!org_user)return responseService.respond(res,{},412,false,'User cannot create listing for organization')
             if(org_user.dataValues.role!=organizationUserRoles.ADMIN)return responseService.respond(res,{},412,false,'User cannot create listing for organization')
+            //attach org id
+            body['organization_id']=org.dataValues.id
             }
 
 
@@ -42,18 +42,16 @@ export default class HouseController {
             body.pictures = pictures
             body['short_video'] = video
             body['user_id'] = user.dataValues.id
-            //attach org id
-            if(org)body['organization_id']=org.dataValues.id
+ 
             ///
             body.has_children = body.has_children === 'true';
-            if(body.has_children && !body.sub_house)return responseService.respond(res,{},412,false,'If listing has children, ensure to pass the sub houses under or pass false to the has_children valie')
+            if(body.has_children && !body.sub_house)return responseService.respond(res,{},412,false,'If listing has children, ensure to pass the sub houses under or pass false to the has_children value')
             
             const create = await house.create(body);
             const sub_house = body.sub_house;
             if(body.has_children || sub_house){
             for (let index = 0; index < sub_house.length; index++) {
                 const element = sub_house[index];
-                const test = `sub_house[${index}]pictures`
                 const pictures = files
                     .filter((res: { path: string; fieldname: string }) => res.fieldname === `sub_house[${index}][pictures]`)
                     .map((res: { path: string }) => res.path);
@@ -64,12 +62,12 @@ export default class HouseController {
                 element['short_video'] = video;
                 element['house_id'] = create.dataValues.id
                 element['user_id'] = user.dataValues.id
-                const createor = await subHouse.create(element)
+                await subHouse.create(element)
             }
         }
 
             ///send socket to all connected users
-            const houses = await house.findAll({ include: [{ model: subHouse, as: 'sub_house' }] });
+            const houses = await house.findAll({ include: [{ model: subHouse, as: 'sub_house' },{model:organization,as:'organization'},{model:users,as:'creator'}] });
             await socketIo.SendMessage(houses, null, 'message')
             return responseService.respond(res, body, 201, true, 'listing successfully added');
         } catch (error) {

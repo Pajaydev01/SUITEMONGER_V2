@@ -11,8 +11,8 @@ class userController {
     public static CreateUser = async (req: Request, res: Response) => {
         try {
             const body = actionService.getBody(req);
-            const checker = await users.findOne({ where: { email: body.email } });
-            if (checker) return responseService.respond(res, {}, 412, false, 'User already exists');
+            //const checker = await users.findOne({ where: { email: body.email } });
+            //if (checker) return responseService.respond(res, {}, 412, false, 'User already exists');
             //salt and hash the password
             const password = await actionService.hasher(body.password);
             body.password = password.hash;

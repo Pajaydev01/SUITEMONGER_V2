@@ -6,9 +6,7 @@ import kyc, { kycStatus } from '../database/models/kyc.model';
 import users, { userStatus } from '../database/models/users.model';
 import notificationService from '../services/notification.service';
 import socketIo from '../services/websocket.service';
-import { json } from 'sequelize';
 class QueueController {
-    constructor() { }
 
     // Add your methods and logic here
     public static async ProcessEmailJob(job: Queue.Job, done: Queue.DoneCallback) {
