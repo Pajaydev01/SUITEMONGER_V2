@@ -42,5 +42,7 @@ router.get('/listing/fetch', AuthService.AuthSanctumLister, HouseController.List
 //////admin
 router.post("/admin/kyc/approve", AuthService.AuthSanctumAdmin, validate.validateAdminApproveKyc, Kyccontroller.AdminApproveKyc);
 router.post("/admin/org/approve",validate.validateAdminApproveOrganization,AuthService.AuthSanctumAdmin,Organization.ApproveRejectOrg)
+router.post("/admin/house/approve",validate.validateAdminApproveListing,AuthService.AuthSanctumAdmin,HouseController.AdminApproveListing)
+router.get("/admin/house",AuthService.AuthSanctumAdmin,HouseController.AdminGetAllListings)
 export { router };
 

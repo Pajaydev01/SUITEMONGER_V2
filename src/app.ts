@@ -8,18 +8,17 @@ app.use(express.json({ limit: '5000mb' }));
 app.use(express.urlencoded({ limit: '5000mb' }));
 app.use(express.json());
 import { router } from './router/router';
-import { Server, createServer } from 'node:https';
-import * as fs from 'fs';
-import path from 'node:path';
 import websocketService from './services/websocket.service';
+import path from 'path';
 app.use(cors({
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     preflightContinue: false,
     origin: '*'
 }));
+app.use("/public/", express.static(path.resolve(__dirname,'../public/')));
 app.get('/', (req, res) => {
-    res.send('HELLO WORLD FROM HR56, DONT WORRY, WE ARE NOT HACKED');
+    res.send('HELLO WORLD FROM SUITEMONGER, DONT WORRY, WE ARE NOT HACKED');
 });
 
 

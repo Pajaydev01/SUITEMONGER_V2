@@ -29,37 +29,49 @@ const userModel = {
         onDelete: 'CASCADE',
         onUpdate: 'CASCADE'
     },
-    name:{
-        type:DataTypes.STRING,
-        allowNull:false,
-    },
-    details:{
-        type:DataTypes.STRING,
-        allowNull:false
-    },
-    short_video:{
-        type:DataTypes.STRING,
-        allowNull:false
-    },
-    pictures:{
-        type: DataTypes.JSON,
+    name: {
+        type: DataTypes.STRING,
         allowNull: false,
     },
-    price:{
-        type:DataTypes.BIGINT,
-        allowNull:false
+    details: {
+        type: DataTypes.STRING,
+        allowNull: false
     },
-    space_available:{
-        type:DataTypes.INTEGER,
-        allowNull:false
+    short_video: {
+        type: DataTypes.STRING,
+        allowNull: false
     },
-    rules:{
+    pictures: {
         type: DataTypes.JSON,
         allowNull: false,
+        get() {
+            const rawValue = this.getDataValue('pictures');
+            return rawValue ? JSON.parse(rawValue) : null;
+        }
     },
-    amenities:{
+    price: {
+        type: DataTypes.BIGINT,
+        allowNull: false
+    },
+    space_available: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    },
+    rules: {
+        type: DataTypes.JSON,
+        allowNull: false,
+        get() {
+            const rawValue = this.getDataValue('rules');
+            return rawValue ? JSON.parse(rawValue) : null;
+        }
+    },
+    amenities: {
         type: DataTypes.JSON,
         allowNull: true,
+        get() {
+            const rawValue = this.getDataValue('amenities');
+            return rawValue ? JSON.parse(rawValue) : null;
+        }
     }
 }
 subHouse.init(

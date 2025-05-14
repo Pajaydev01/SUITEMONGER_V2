@@ -172,6 +172,27 @@ class validate {
         }
     }
 
+    public static validateAdminApproveListing= async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const approveType=['APPROVED','REJECTED']
+            const check = validator.object({
+                house_id: validator.string().required(),
+                approved_reject: validator.string().oneOf(approveType).required(),
+                reason: validator.string().when('approved_reject', {
+                    is:(approved_reject:string)=>{approved_reject=='REJECTED'},
+                    then: ()=>validator.string().required(),
+                    otherwise: ()=>validator.string().notRequired(),
+                    
+                }),
+            });
+            await check.validate(req.body);
+            next();
+        } catch (error) {
+            console.log('error here',error)
+            responseService.respond(res, error.data ? error.data : error, error.code && typeof error.code == 'number' ? error.code : 500, false, error.message ? error.message : 'Server error');
+        }
+    }
+
     public static validateCreateListing= async (req: Request, res: Response, next: NextFunction) => {
         try {
            //req.body=actionService.formDataToObject(req.body)

@@ -1,14 +1,19 @@
 import { Request, Response, NextFunction } from "express";
-import { ValidationError, DatabaseError } from 'sequelize';
+import {  DatabaseError } from 'sequelize';
+import { ValidationError } from "yup";
 interface data {
 }
 
 class handle extends Error {
     public respond = (response: any, data: data, code: number, success: boolean, message: string, token: string = null) => {
-        //console.log(data)
+        //console.log(data instanceof ValidationError)
         //check if the error is a db error
-        if (data instanceof Error || data instanceof DatabaseError) {
+        if (data instanceof DatabaseError) {
             const resp=this.handleDbErrors(data as DatabaseError)
+            return response.status(resp.code).json(resp);
+        }
+        else if(data instanceof ValidationError){
+            const resp=this.handleValidationErrors(data)
             return response.status(resp.code).json(resp);
         }
         const resp = token ? {
@@ -26,6 +31,7 @@ class handle extends Error {
 
 
     private handleDbErrors=(error: DatabaseError)=>{
+        console.log("db error here",error)
         let response;
         switch (error.name){
             case 'SequelizeUniqueConstraintError':
@@ -46,6 +52,16 @@ class handle extends Error {
                 break;
         }
         return response
+    }
+
+    private handleValidationErrors=(error:ValidationError)=>{
+    const errors = error.errors.map(err => err).join(', ');
+    return {
+        message: `Validation error(s): ${errors}`,
+        data: null,
+        code: 400,
+        success: false
+    };
     }
 
     public premiumcreditresponse = (response: any, data: data, code: number, success: boolean, message: string,) => {

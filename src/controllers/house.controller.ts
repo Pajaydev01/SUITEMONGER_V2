@@ -3,13 +3,15 @@ import responseService from "../services/response.service";
 import actionService from "../services/action.service";
 import AuthService from "../services/Auth.service";
 import { kycStatus } from "../database/models/kyc.model";
-import house from "../database/models/house.model";
+import house, { houseApprovalStatus } from "../database/models/house.model";
 import subHouse from "../database/models/sub_house.model";
 import socketIo from "../services/websocket.service";
 import organization, { organizationtatus } from "../database/models/organization.model";
 import users from "../database/models/users.model";
 import organization_users, { organizationUserRoles } from "../database/models/organization_users.model";
 import { Op } from "sequelize";
+import { userType } from '../database/models/users.model';
+import notificationService from "../services/notification.service";
 
 export default class HouseController {
     public static CreateListing = async (req: Request, res: Response) => {
@@ -66,9 +68,13 @@ export default class HouseController {
             }
         }
 
+        //send notification to the first 5 admin gotten
+        const admin = await users.findAll({ where: { role: userType.USER_TYPE_ADMIN }, attributes: ['email'], limit: 10 });
+        const emails = admin.map((adminUser: any) => adminUser.dataValues.email);
+         await notificationService.sendMail(emails, 'Listing Notification', 'mail', { name:'', body: `Dear admin,a Lister just listed a product, kindly login to your dashboard to inspect and approve or reject the listing, regards`, email:'admin' });
             ///send socket to all connected users
-            const houses = await house.findAll({ include: [{ model: subHouse, as: 'sub_house' },{model:organization,as:'organization'},{model:users,as:'creator'}] });
-            await socketIo.SendMessage(houses, null, 'message')
+            // const houses = await house.findAll({ include: [{ model: subHouse, as: 'sub_house' },{model:organization,as:'organization'},{model:users,as:'creator'}] });
+            // await socketIo.SendMessage(houses, null, 'message')
             return responseService.respond(res, body, 201, true, 'listing successfully added');
         } catch (error) {
             responseService.respond(res, error.data ? error.data : error, error.code && typeof error.code == 'number' ? error.code : 500, false, error.message ? error.message : 'Server error');
@@ -79,8 +85,11 @@ export default class HouseController {
 
     public static UserGetListings = async (req: Request, res: Response) => {
         try {
-            const houses = await house.findAll({ include: [{ model: subHouse, as: 'sub_house' },{model:organization,as:'organization'},{model:users,as:'creator'}] });
-            return responseService.respond(res, houses, 200, true, 'Listing fetched')
+            const houses = await house.findAll({where:{approval_status:houseApprovalStatus.HOUSE_STATUS_VERIFIED}, include: [{ model: subHouse, as: 'sub_house' },{model:organization,as:'organization'},{model:users,as:'creator'}] });
+            const uniqueHouses = Array.from(
+                new Map(houses.map(h => [h.dataValues.id, h])).values()
+              );
+            return responseService.respond(res, uniqueHouses, 200, true, 'Listing fetched')
         } catch (error) {
             responseService.respond(res, error.data ? error.data : error, error.code && typeof error.code == 'number' ? error.code : 500, false, error.message ? error.message : 'Server error');
         }
@@ -103,6 +112,33 @@ export default class HouseController {
         const uniqueHouses = Array.from(
             new Map(houses.map(h => [h.dataValues.id, h])).values()
           );
+            return responseService.respond(res, uniqueHouses, 200, true, 'Listing fetched')
+        } catch (error) {
+            responseService.respond(res, error.data ? error.data : error, error.code && typeof error.code == 'number' ? error.code : 500, false, error.message ? error.message : 'Server error');
+        }
+    }
+
+    public static AdminApproveListing=async (req:Request,res:Response)=>{
+        try {
+            const body=actionService.getBody(req);
+            const hous = await house.findOne({ where: { id: body.house_id, approval_status: { [Op.ne]: houseApprovalStatus.HOUSE_STATUS_VERIFIED } },include:{model:users,as:'creator'} });
+            if(!hous)return responseService.respond(res,{},412,false,'Invalid house id or house listing already approved');
+            const update=await hous.update({approval_status:body.approved_reject});
+            if(body.approved_reject==houseApprovalStatus.HOUSE_STATUS_REJECTED){
+                await notificationService.sendMail(hous.dataValues.creator.dataValues.email, 'Listing rejected', 'mail', { name:hous.dataValues.creator.dataValues.first_name, body: `Dear ${hous.dataValues.creator.dataValues.first_name},Your house submitted on suitemonger with name : ${hous.dataValues.name} has been rejected for this reason: ${body.reason}, kindly reach out on the dashboard to submit any dispute if you feel this is wrong`, email:hous.dataValues.creator.dataValues.first_name });
+            }
+            return responseService.respond(res,hous,200,true,'House approved sucessfully')
+        } catch (error) {
+            responseService.respond(res, error.data ? error.data : error, error.code && typeof error.code == 'number' ? error.code : 500, false, error.message ? error.message : 'Server error');
+        }
+    }
+
+    public static AdminGetAllListings = async (req: Request, res: Response) => {
+        try {
+            const houses = await house.findAll({include: [{ model: subHouse, as: 'sub_house' },{model:organization,as:'organization'},{model:users,as:'creator'}] });
+            const uniqueHouses = Array.from(
+                new Map(houses.map(h => [h.dataValues.id, h])).values()
+              );
             return responseService.respond(res, uniqueHouses, 200, true, 'Listing fetched')
         } catch (error) {
             responseService.respond(res, error.data ? error.data : error, error.code && typeof error.code == 'number' ? error.code : 500, false, error.message ? error.message : 'Server error');

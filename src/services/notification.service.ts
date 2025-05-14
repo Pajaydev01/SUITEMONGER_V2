@@ -3,26 +3,29 @@ import { config } from "../config/config";
 import * as handlebar from "handlebars";
 import * as fs from "fs";
 import queueService from './queue.service';
+import Mail from 'nodemailer/lib/mailer';
+import SMTPPool from 'nodemailer/lib/smtp-pool';
 interface replacement { }
 export type templates = 'emailVerification' | 'notification' | 'mail'
 class notifcation {
-    public async sendMail(to: string, subject: string, template: templates, replacement: replacement, queue: boolean = true, attachment: string = null): Promise<{}> {
+    public async sendMail(to: string | Array<string>, subject: string, template: templates, replacement: replacement, queue: boolean = true, attachment: string = null): Promise<{}> {
         return new Promise(async (resolve, reject) => {
             try {
                 console.log('email receipient', to)
                 const res = fs.readFileSync(`email_templates/${template}.html`, 'utf-8').toString();
                 const templates = handlebar.compile(res);
                 const html = templates(replacement);
-                const setup = {
+                const setup:SMTPPool.Options= {
                     host: config.EMAIL_HOST,
-                    port: config.EMAIL_PORT,
+                    port: parseInt(config.EMAIL_PORT),
                     //secure: true,
                     auth: {
                         user: config.EMAIL_USER,
                         pass: config.EMAIL_PASS
-                    }
+                    },
+                    pool: true
                 };
-                const item = {
+                const item:Mail.Options = {
                     from: {
                         name: config.EMAIL_NAME,
                         address: config.EMAIL_USER
